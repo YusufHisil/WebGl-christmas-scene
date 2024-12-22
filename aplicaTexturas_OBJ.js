@@ -284,16 +284,19 @@ function drawScene() {
 
   // se asigna un objeto textura a la unidad de textura activa
   
-  gl.bindTexture(gl.TEXTURE_2D, texturesId[0]);
   //drawSolid(exampleCube);
   
+  gl.bindTexture(gl.TEXTURE_2D, texturesId[0]);
   prepareObject([0,-10,10],[10,10,10])
   drawSolid(table);
+  gl.bindTexture(gl.TEXTURE_2D, texturesId[2]);
   prepareObject([0, 30,10],[1,1,1])
   drawSolid(plane)
   prepareObject([0,-10,0],[2,2,2], "x", -Math.PI/2)
+  gl.bindTexture(gl.TEXTURE_2D, texturesId[1]);
   drawSolid(gingerbread)
   prepareObject([15,-10,50],[1,1,1], "yy", Math.PI/2)
+  gl.bindTexture(gl.TEXTURE_2D, texturesId[1]);
   drawSolid(oven)
   prepareObject([0,-2.5,5],[0.21,0.21,0.21], "zx", Math.PI, Math.PI/2)
   drawSolid(man)
@@ -533,8 +536,8 @@ function loadTextureFromServer (filename, texturePos) {
 
 function initTextures() {
 
-  var serverUrl    = "https://raw.githubusercontent.com/YusufHisil/flappy_bird_java/3aa32efea23c7175e19dbb814a605f4724abcf68/";
-  var texFilenames = ["background.png"];
+  var serverUrl    = "https://raw.githubusercontent.com/YusufHisil/WebGl-christmas-scene/refs/heads/master/models/";
+  var texFilenames = ["tree.png", "gingerbread.jpg", "plane.jpg", "oven.png"];
 
   for (var texturePos = 0; texturePos < texFilenames.length; texturePos++) {
   
