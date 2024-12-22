@@ -49,8 +49,10 @@
         vec3 Ld;       // Difusa
         vec3 Ls;       // Especular
       };
-      uniform LightData Light;
-      
+      uniform LightData Light1;
+      uniform LightData Light2;
+      uniform LightData Light3;
+
       struct MaterialData {
         vec3 Ka;       // Ambiente
         vec3 Kd;       // Difusa
@@ -66,35 +68,48 @@
       in  vec2 texCoords;
       out vec4 fragmentColor;
       
-      vec3 phong (vec3 N, vec3 L, vec3 V) {
-        
+      vec3 phong(vec3 N, vec3 L, vec3 V, LightData Light) {
         vec3  ambient  = Material.Ka * Light.La;
         vec3  diffuse  = vec3(0.0);
         vec3  specular = vec3(0.0);
         
-        float NdotL    = dot (N,L);
+        float NdotL    = dot(N,L);
         
         if (NdotL > 0.0) {
-          vec3  R       = reflect(-L, N);;
-          float RdotV_n = pow(max(0.0, dot(R,V)), Material.alpha);
-          
-          diffuse  = NdotL   * (Light.Ld * Material.Kd);
-          specular = RdotV_n * (Light.Ls * Material.Ks);
+            vec3  R       = reflect(-L, N);
+            float RdotV_n = pow(max(0.0, dot(R,V)), Material.alpha);
+            
+            diffuse  = NdotL   * (Light.Ld * Material.Kd);
+            specular = RdotV_n * (Light.Ls * Material.Ks);
         }
         
         return (ambient + diffuse + specular);
-        
-      }
+}
       
       void main() {
-        
         vec3 n = normalize(N);
-        vec3 L = normalize(Light.Position - ec);
         vec3 V = normalize(-ec);
         
-        fragmentColor = texture(myTexture, texCoords * repetition) * vec4(phong(n,L,V), 1.0) * 1.6;
+         
+        // Calculate lighting for first light source
+        vec3 L1 = normalize(Light1.Position - ec);
+        vec3 color1 = phong(n, L1, V, Light1);
         
-      }
+        // Calculate lighting for second light source
+        vec3 L2 = normalize(Light2.Position - ec);
+        vec3 color2 = phong(n, L2, V, Light2);
+        
+        // Calculate lighting for third light source
+        vec3 L3 = normalize(Light3.Position - ec);
+        vec3 color3 = phong(n, L3, V, Light3);
+        
+        // Combine the lighting from all three sources
+        vec3 finalColor = color1 + color2 + color3;
+        
+        // Apply texture and final color
+        fragmentColor = texture(myTexture, texCoords * repetition) * vec4(finalColor, 1.0) * 3.0;
+}
+
       
     </script>
     

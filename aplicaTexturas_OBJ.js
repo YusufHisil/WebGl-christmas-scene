@@ -1,9 +1,13 @@
 
 var gl, program, program2;
-var myZeta = 0.0, myPhi = Math.PI/2.0, radius = 50, fovy = 1.4;
-var selectedPrimitive = tree;
-
+var fovy = 1.4;
+var eye = vec3.fromValues(-40,0,50)
+var center = vec3.fromValues(0,0,0)
+var up = vec3.fromValues(0,1,0)
 var texturesId = [];
+var lightPos1 = [12.1, 3.0, 49.5, 1.]; //firelight
+var lightPos2 = [0.0, 0.0, 0.0, 1.];
+var lightPos3 = [0.0, 0.0, 0.0, 1.];
 
 function getWebGLContext() {
 
@@ -70,18 +74,35 @@ function initShaders() {
   gl.uniform1i(program.myTextureIndex, 3);
   gl.uniform1f(program.repetition,     1.0);
 
-  // material
-  program.KaIndex               = gl.getUniformLocation( program, "Material.Ka");
-  program.KdIndex               = gl.getUniformLocation( program, "Material.Kd");
-  program.KsIndex               = gl.getUniformLocation( program, "Material.Ks");
-  program.alphaIndex            = gl.getUniformLocation( program, "Material.alpha");
-    
-  // fuente de luz
-  program.LaIndex               = gl.getUniformLocation( program, "Light.La");
-  program.LdIndex               = gl.getUniformLocation( program, "Light.Ld");
-  program.LsIndex               = gl.getUniformLocation( program, "Light.Ls");
-  program.PositionIndex         = gl.getUniformLocation( program, "Light.Position");
   
+  program.ka= gl.getUniformLocation(program, 'Material.Ka'),
+  program.kd= gl.getUniformLocation(program, 'Material.Kd'),
+  program.ks= gl.getUniformLocation(program, 'Material.Ks'),
+  program.alpha= gl.getUniformLocation(program, 'Material.alpha')
+
+  // material
+  program.light1 = {
+    position: gl.getUniformLocation(program, 'Light1.Position'),
+    la: gl.getUniformLocation(program, 'Light1.La'),
+    ld: gl.getUniformLocation(program, 'Light1.Ld'),
+    ls: gl.getUniformLocation(program, 'Light1.Ls')
+};
+
+program.light2 = {
+    position: gl.getUniformLocation(program, 'Light2.Position'),
+    la: gl.getUniformLocation(program, 'Light2.La'),
+    ld: gl.getUniformLocation(program, 'Light2.Ld'),
+    ls: gl.getUniformLocation(program, 'Light2.Ls')
+};
+
+program.  light3 = {
+    position: gl.getUniformLocation(program, 'Light3.Position'),
+    la: gl.getUniformLocation(program, 'Light3.La'),
+    ld: gl.getUniformLocation(program, 'Light3.Ld'),
+    ls: gl.getUniformLocation(program, 'Light3.Ls')
+};
+    
+
 }
 
 function initRendering() {
@@ -124,11 +145,7 @@ function initPrimitives() {
   initBuffers(man);
   initBuffers(oven);
   initBuffers(hat);
-
-    
-  myTorus = makeTorus(0.4, 1.0, 8, 12);
-  initBuffers(myTorus);
-    
+  initBuffers(exampleCube)
 }
 
 function setShaderProjectionMatrix(projectionMatrix) {
@@ -157,37 +174,43 @@ function getNormalMatrix(modelViewMatrix) {
 
 function getProjectionMatrix() {
 
-  return mat4.perspective(mat4.create(), fovy, 1.0, 0.1, 100.0);
+  return mat4.perspective(mat4.create(), fovy, 1.0, 0.1, 1000.0);
     
 }
 
 function getCameraMatrix() {
-    
-  // coordenadas esféricas a rectangulares: https://en.wikipedia.org/wiki/Spherical_coordinate_system
-  var x = radius * Math.sin(myPhi) * Math.sin(myZeta);
-  var y = radius * Math.cos(myPhi);
-  var z = radius * Math.sin(myPhi) * Math.cos(myZeta);
-
-  return mat4.lookAt(mat4.create(), [x, y, z], [0, 0, 0], [0, 1, 0]);
-    
+  return mat4.lookAt(mat4.create(), 
+    eye, 
+    center, 
+    up);
 }
 
 function setShaderMaterial(material) {
     
-  gl.uniform3fv(program.KaIndex,    material.mat_ambient);
-  gl.uniform3fv(program.KdIndex,    material.mat_diffuse);
-  gl.uniform3fv(program.KsIndex,    material.mat_specular);
-  gl.uniform1f (program.alphaIndex, material.alpha);
+  gl.uniform3fv(program.ka,    material.mat_ambient);
+  gl.uniform3fv(program.kd,    material.mat_diffuse);
+  gl.uniform3fv(program.ks,    material.mat_specular);
+  gl.uniform1f (program.alpha, material.alpha);
     
 }
 
 function setShaderLight() {
     
-  gl.uniform3f(program.LaIndex,       1.0, 1.0, 1.0);
-  gl.uniform3f(program.LdIndex,       1.0, 1.0, 1.0);
-  gl.uniform3f(program.LsIndex,       1.0, 1.0, 1.0);
-  gl.uniform3f(program.PositionIndex, 0.2, 0.2, 0.0); // en coordenadas del ojo
-    
+  //gl.uniform3f(program.light1.position, 0.2, 0.2, 0.0);  // Position of first light
+  gl.uniform3f(program.light1.la, 1.0,0.6,0.0);     // Ambient color
+  gl.uniform3f(program.light1.ld, 1.0,0.6,0.0);     // Diffuse color
+  gl.uniform3f(program.light1.ls, 1.0,0.6,0.0);     // Specular color
+  
+  // Set valuesprogram. for second light
+  //gl.uniform3f(program.light2.position, 0.2, 0.2, 0.0);  // Position of second light
+  gl.uniform3f(program.light2.la, 0.8,0.0,0.0);     // Ambient color
+  gl.uniform3f(program.light2.ld, 0.8,0.0,0.0);     // Diffuse color
+  gl.uniform3f(program.light2.ls, 0.8,0.0,0.0);
+  // Set valuesprogram. for third light
+  //gl.uniform3f(program.light3.position, 0.2, 0, 0.2);  // Position of third light
+  gl.uniform3f(program.light3.la, 0.0,0.8,0.0);     // Ambient color
+  gl.uniform3f(program.light3.ld, 0.0,0.8,0.0);     // Diffuse color
+  gl.uniform3f(program.light3.ls, 0.0,0.8,0.0);
 }
 
 function prepareObject(Translation, Scaling, axis=" ", angle1=0, angle2=0)
@@ -229,30 +252,18 @@ function drawSolid(model) {
     
 }
 
+function moveEye () {
+  
+  return mat4.lookAt(mat4.create(), eye,  center, [0, 1, 0]);
+}
 
-// function rotateObject(object, axis, angle) {
-//     const rotationMatrix = mat4.create();
-//     if (axis === 'x') mat4.rotateX(rotationMatrix, rotationMatrix, angle);
-//     else if (axis === 'y') mat4.rotateY(rotationMatrix, rotationMatrix, angle);
-//     else if (axis === 'z') mat4.rotateZ(rotationMatrix, rotationMatrix, angle);
+function setTransformLight(uniformLocation, lightPos) {
+  Lp = vec4.create();
+  //mat4.multiply(Lp, getCameraMatrix(),lightPos);
+  mat4.multiply(Lp, moveEye(),lightPos);
+  gl.uniform3f(uniformLocation, Lp[0], Lp[1], Lp[2]);
+}
 
-    
-//     const rotatedVertices = [];
-//     for (let i = 0; i < object.vertices.length; i += 3) {
-//         const vertex = vec3.fromValues(
-//             object.vertices[i],
-//             object.vertices[i + 1],
-//             object.vertices[i + 2]
-//         );
-//         vec3.transformMat4(vertex, vertex, rotationMatrix);
-//         rotatedVertices.push(...vertex);
-//     }
-
-//     return {
-//         vertices: rotatedVertices,
-//         indices: object.indices, 
-//     };
-// }
 
 function drawScene() {
 
@@ -274,6 +285,11 @@ function drawScene() {
 
   // se obtiene la matriz de transformacion de la normal y se envia al shader
   setShaderNormalMatrix(getNormalMatrix(modelViewMatrix));
+
+  setTransformLight(program.light1.position, lightPos1);
+  setTransformLight(program.light2.position,lightPos2);
+  setTransformLight(program.light3.position,lightPos3);
+
     
   // se envia al Shader el material del objeto
   // En este ejemplo es el mismo material para los dos objetos
@@ -286,7 +302,7 @@ function drawScene() {
   
   //drawSolid(exampleCube);
   
-  gl.bindTexture(gl.TEXTURE_2D, texturesId[0]);
+  gl.bindTexture(gl.TEXTURE_2D, texturesId[5]);
   prepareObject([0,-10,10],[10,10,10])
   drawSolid(table);
   gl.bindTexture(gl.TEXTURE_2D, texturesId[2]);
@@ -296,102 +312,153 @@ function drawScene() {
   gl.bindTexture(gl.TEXTURE_2D, texturesId[1]);
   drawSolid(gingerbread)
   prepareObject([15,-10,50],[1,1,1], "yy", Math.PI/2)
-  gl.bindTexture(gl.TEXTURE_2D, texturesId[1]);
+  gl.bindTexture(gl.TEXTURE_2D, texturesId[3]);
   drawSolid(oven)
   prepareObject([0,-2.5,5],[0.21,0.21,0.21], "zx", Math.PI, Math.PI/2)
+  gl.bindTexture(gl.TEXTURE_2D, texturesId[4]);
   drawSolid(man)
   prepareObject([-2,-2.5,5],[0.21,0.21,0.21], "zx", Math.PI, Math.PI/2)
   drawSolid(man)
   prepareObject([2,-2.5,5],[0.21,0.21,0.21], "zx", Math.PI, Math.PI/2)
   drawSolid(man)
+  gl.bindTexture(gl.TEXTURE_2D, texturesId[1]);
   prepareObject([0,-2.5,9.5],[.25,0.25,0.25],"xx", Math.PI/2)
   drawSolid(hat)
   prepareObject([-40,-10,10],[0.3,0.3,0.3])
+  gl.bindTexture(gl.TEXTURE_2D, texturesId[0]);
   drawSolid(tree)
+  prepareObject([-10,10,20],[40,90,70], "zz", -Math.PI/2)
+  drawSolid(exampleCube);
+  gl.bindTexture(gl.TEXTURE_2D, texturesId[6]);
+  prepareObject([12.1, 3.0, 49.5, 1.],[10,10,10], "zz", -Math.PI/2)
+  drawSolid(exampleCube);
+}
+
+var v,u,n;
+v = vec3.create();
+u = vec3.create();
+n = vec3.create();
+
+function dolly(dn)
+{
+  vec3.subtract(n, eye, center)
+  vec3.normalize(n, n)
+  vec3.scale(n, n, dn)
+
+  vec3.add(eye, eye, n)
+  vec3.add(center, center, n)
+}
+
+function truck(du)
+{
+  vec3.subtract(n, eye, center);
+  vec3.normalize(n, n);
+
+  vec3.cross(u, up, n);
+  vec3.normalize(u, u)
+  vec3.scale(u,u,du)
+
+  vec3.add(eye,eye, u)
+  vec3.add(center, center, u)
+}
+
+function pedestal(dv)
+{
+  vec3.subtract(n, eye, center);
+  vec3.normalize(n, n);
+
+  vec3.cross(u, up, n);
+  vec3.normalize(u, u)
+
+  vec3.cross(v, n, u);
+  vec3.normalize(v, v);
+  vec3.scale(v, v, dv);
+
+  vec3.add(eye, eye, v)
+  vec3.add(center, center, v)
+
+}
+
+var new_center = vec3.create()
+var tilt_rotate = mat4.create()
+function tilt(angle)
+{
+  vec3.subtract(n, eye, center)
+  vec3.normalize(n, n);
+
+  vec3.cross(u, up, n);
+  vec3.normalize(u, u)
+
+  vec3.subtract(new_center, center, eye)
+
+  mat4.fromRotation(tilt_rotate, angle, u)
+
+  vec3.transformMat4(new_center, new_center, tilt_rotate)
+
+  vec3.add(center, new_center, eye)
+  vec3.cross(up, n, u);
+
+  vec3.transformMat4(up, up, tilt_rotate)
+}
+
+function pan(angle)
+{
+  vec3.subtract(new_center, center, eye)
+
+  mat4.fromRotation(tilt_rotate, angle, up)
+
+  vec3.transformMat4(new_center, new_center, tilt_rotate)
+
+  vec3.add(center, new_center, eye)
 }
 
 function initHandlers() {
     
-  var mouseDown = false;
-  var lastMouseX;
-  var lastMouseY;
-
-  var canvas = document.getElementById("myCanvas");
-
-  canvas.addEventListener("mousedown",
-    function(event) {
-      mouseDown  = true;
-      lastMouseX = event.clientX;
-      lastMouseY = event.clientY;
-    },
-    false);
-
-  canvas.addEventListener("mouseup",
-    function() {
-      mouseDown = false;
-    },
-    false);
-  
-  canvas.addEventListener("wheel",
-    function (event) {
-      
-      var delta = 0.0;
-
-      if (event.deltaMode == 0)
-        delta = event.deltaY * 0.001;
-      else if (event.deltaMode == 1)
-        delta = event.deltaY * 0.03;
-      else
-        delta = event.deltaY;
-
-      if (event.shiftKey == 1) { // fovy
-          
-        fovy *= Math.exp(-delta)
-        fovy = Math.max (0.1, Math.min(3.0, fovy));
-        
-//         htmlFovy.innerHTML = (fovy * 180 / Math.PI).toFixed(1);
-        
-      } else {
-        
-        radius *= Math.exp(-delta);
-        // radius  = Math.max(Math.min(radius, 30), 0.05);
-        
-//         htmlRadius.innerHTML = radius.toFixed(1);
-        
+  window.addEventListener('keydown', (event) => 
+    {
+      switch(event.key)
+      {
+        case 'w':
+          dolly(-1)
+          break;
+        case 's':
+          dolly(1);
+          break; 
+        case 'a':
+          truck(-1);
+          break;
+        case 'd':
+          truck(1);
+          break;
+         case 'ArrowUp':
+          event.preventDefault()
+          pedestal(1);
+          break;
+        case 'ArrowDown':
+          event.preventDefault()
+          pedestal(-1);
+          break;
+        case '4':
+          pan(0.1)
+          break;
+        case '6':
+          pan(-0.1)
+          break;
+        case '8':
+          tilt(0.1);
+          break;
+        case '2':
+          tilt(-0.1);
+          break;
+        case 'z':
+          console.log(eye);
+          break;
+        default:
+          console.log(event.key);
       }
-      
-      event.preventDefault();
-      requestAnimationFrame(drawScene);
 
-    }, false);
-
-  canvas.addEventListener("mousemove",
-    function (event) {
-      
-      if (!mouseDown) {
-        return;
-      }
-      
-      var newX = event.clientX;
-      var newY = event.clientY;
-      
-      myZeta -= (newX - lastMouseX) * 0.005;
-      myPhi  -= (newY - lastMouseY) * 0.005;
-        
-      var margen = 0.01;
-      myPhi = Math.min (Math.max(myPhi, margen), Math.PI - margen);
-        
-//       htmlPhi.innerHTML  = (myPhi  * 180 / Math.PI).toFixed(1);
-//       htmlZeta.innerHTML = (myZeta * 180 / Math.PI).toFixed(1);
-     
-      lastMouseX = newX
-      lastMouseY = newY;
-      
-      event.preventDefault();
-      requestAnimationFrame(drawScene);
-      
-    },
-    false);
+      drawScene();
+    })
     
  var colors = document.getElementsByTagName("input");
 
@@ -495,26 +562,6 @@ function setTexture (image, texturePos) {
 
 }
 
-function loadTextureFromFile(filename, texturePos) {
-
-  var reader = new FileReader(); // Evita que Chrome se queje de SecurityError al cargar la imagen elegida por el usuario
-  
-  reader.addEventListener("load",
-                          function() {
-                            var image = new Image();
-                            image.addEventListener("load",
-                                                   function() {
-                                                     setTexture(image, texturePos);
-                                                  },
-                                                   false);
-                            image.src = reader.result;
-                          },
-                          false);
-  
-  reader.readAsDataURL(filename);
-
-}
-
 function loadTextureFromServer (filename, texturePos) {
     
   var image = new Image();
@@ -537,7 +584,7 @@ function loadTextureFromServer (filename, texturePos) {
 function initTextures() {
 
   var serverUrl    = "https://raw.githubusercontent.com/YusufHisil/WebGl-christmas-scene/refs/heads/master/models/";
-  var texFilenames = ["tree.png", "gingerbread.jpg", "plane.jpg", "oven.png"];
+  var texFilenames = ["tree.png", "gingerbread.jpg", "plane.jpg", "oven.png", "cookieTex.jpg", "woodTex.jpg", "whitePlastic.jpg"];
 
   for (var texturePos = 0; texturePos < texFilenames.length; texturePos++) {
   
@@ -560,7 +607,7 @@ function initWebGL() {
     alert("WebGL 2.0 no está disponible");
     return;
   }
-    
+      
   initShaders(); 
   initPrimitives(); 
   gl.useProgram(program);
